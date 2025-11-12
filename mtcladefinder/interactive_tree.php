@@ -144,48 +144,74 @@ if(isset($_POST['add'])) {
 }
 
 
-function getPhyloeqHTMLOutput($phyloeq_obj) {
-	$phyloq_str = "";
-	foreach($phyloeq_obj as $key=>$value) {
-		$color = "blue";
-		$bold = False;
-		$call = $phyloeq_obj->{$key}->{"call"};
-		if ($call == "+") {
-			$color = "green";
-			$bold = True;
-		} else {
-			if ($call == "-") {
-				$color = "red";
-				$bold = True;
-			} else {
-				if ($phyloeq_obj->{$key}->{"product"}) {
-					$color = "blue";
-					$bold = "True";
-				} else {
-					$color = "blue";
-				}
-			}
-		}
+function normalizeCall($call) {
+        if (is_null($call)) {
+                return "";
+        }
 
-		$phyloeq_str = $phyloeq_str . ' <font color="' . $color . '">';
-		if ($bold) {
-			$phyloeq_str = $phyloeq_str . "<b>";
-		}
-		if ($call == "?") {
-		
-			if ($phyloeq_obj->{$key}->{"product"}) {
-				$phyloeq_str = $phyloeq_str . $key . '<a href="https://www.yseq.net/product_info.php?products_id=' . $phyloeq_obj->{$key}->{"product"} . '" target="_">($)</a></font>';
-			} else {
-				$phyloeq_str = $phyloeq_str . $key . '<a href="'.getPanelLink(getPanel($key)).'" target="_">($)</a></font>';
-			}
-		} else {
-			$phyloeq_str = $phyloeq_str . $key . $call . "</font>";
-		}
-		if ($bold) {
-			$phyloeq_str = $phyloeq_str . "</b>";
-		}
-	}
-	return $phyloeq_str;
+        $normalized = strtolower(trim($call));
+        if ($normalized === "positive" || $normalized === "pos") {
+                return "+";
+        }
+        if ($normalized === "negative" || $normalized === "neg") {
+                return "-";
+        }
+        if ($normalized === "conflict") {
+                return "c";
+        }
+        if ($normalized === "unknown") {
+                return "?";
+        }
+
+        return trim($call);
+}
+
+function getPhyloeqHTMLOutput($phyloeq_obj) {
+        $phyloeq_str = "";
+        foreach($phyloeq_obj as $key=>$value) {
+                $color = "blue";
+                $bold = False;
+                $call = normalizeCall($phyloeq_obj->{$key}->{"call"});
+                if ($call == "+") {
+                        $color = "green";
+                        $bold = True;
+                } else {
+                        if ($call == "-") {
+                                $color = "red";
+                                $bold = True;
+                        } else {
+                                if ($phyloeq_obj->{$key}->{"product"}) {
+                                        $color = "blue";
+                                        $bold = "True";
+                                } else {
+                                        $color = "blue";
+                                }
+                        }
+                }
+
+                $phyloeq_str = $phyloeq_str . ' <font color="' . $color . '">';
+                if ($bold) {
+                        $phyloeq_str = $phyloeq_str . "<b>";
+                }
+                if ($call == "?") {
+
+                        if ($phyloeq_obj->{$key}->{"product"}) {
+                                $phyloeq_str = $phyloeq_str . $key . '<a href="https://www.yseq.net/product_info.php?products_id=' . $phyloeq_obj->{$key}->{"product"} . '" target="_">($)</a></font>';
+                        } else {
+                                $phyloeq_str = $phyloeq_str . $key . '<a href="'.getPanelLink(getPanel($key)).'" target="_">($)</a></font>';
+                        }
+                } else {
+                        $suffix = $call;
+                        if ($call == "c") {
+                                $suffix = "±";
+                        }
+                        $phyloeq_str = $phyloeq_str . $key . $suffix . "</font>";
+                }
+                if ($bold) {
+                        $phyloeq_str = $phyloeq_str . "</b>";
+                }
+        }
+        return $phyloeq_str;
 }
 
 function getIndent($branchesBelow) {
